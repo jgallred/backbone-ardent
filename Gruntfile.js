@@ -53,7 +53,7 @@ module.exports = function(grunt) {
       //src: 'src/**/*.js',
       src: 'src/*.js',
       options: {
-        specs: 'spec/*Spec.js',
+        specs: 'spec/**/*.spec.js',
         //helpers: 'spec/*Helper.js'
         vendor: [
           'libs/jquery-1.10.1.js',
@@ -61,7 +61,8 @@ module.exports = function(grunt) {
           'libs/underscore.js',
           'libs/backbone-1.0.0.js',
           'node_modules/validatorjs/src/validator.js'
-        ]
+        ],
+        keepRunner : true
       }
     }
 
