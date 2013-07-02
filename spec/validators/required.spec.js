@@ -12,12 +12,12 @@ describe('The "required" validator', function() {
 
     it('flags empty strings', function() {
         ardent.set({name:''});
-        expect(ardent.validate()).toBe(false);
+        expect(ardent.validate()).toBeDefined();
     });
 
     it('flags strings that are just whitespace', function() {
         ardent.set({name:'      '});
-        expect(ardent.validate()).toBe(false);
+        expect(ardent.validate()).toBeDefined();
     });
 
     xit('flags attributes not defined', function() {
