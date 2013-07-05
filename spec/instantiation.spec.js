@@ -72,57 +72,57 @@ describe('Backbone.Ardent', function() {
         expect(ardent.getRules()).toEqual({'name':'required'});
     });
 
-    it('uses a customMessages property to store custom error messages', function() {
-        expect(ardent.customMessages).toBeDefined();
+    it('uses a messages property to store custom error messages', function() {
+        expect(ardent.messages).toBeDefined();
     });
 
-    it('allows customMessages to be passed in the constructor', function() {
+    it('allows messages to be passed in the constructor', function() {
         ardent = new Backbone.Ardent(null, {
-            customMessages : {
+            messages : {
                 'required' : 'The :attribute field is required.'
             }
         });
 
-        expect(ardent.getCustomMessages())
+        expect(ardent.getMessages())
             .toEqual({'required' : 'The :attribute field is required.'});
     });
 
-    it('allows customMessages to be passed as part of subclasses', function() {
+    it('allows messages to be passed as part of subclasses', function() {
         var Subclass =  Backbone.Ardent.extend({
-            customMessages : {
+            messages : {
                 'required' : 'The :attribute field is required.'
             }
         });
 
         ardent = new Subclass();
 
-        expect(ardent.getCustomMessages())
+        expect(ardent.getMessages())
             .toEqual({'required' : 'The :attribute field is required.'});
     });
 
-    it('allows the customMessages property to be an object', function() {
+    it('allows the messages property to be an object', function() {
         ardent = new Backbone.Ardent(null, {
-            customMessages : {
+            messages : {
                 'required' : 'The :attribute field is required.'
             }
         });
 
-        expect(typeof ardent.customMessages).toEqual('object');
-        expect(ardent.getCustomMessages())
+        expect(typeof ardent.messages).toEqual('object');
+        expect(ardent.getMessages())
             .toEqual({'required' : 'The :attribute field is required.'});
     });
 
-    it('allows the customMessages property to be a function', function() {
+    it('allows the messages property to be a function', function() {
         ardent = new Backbone.Ardent(null, {
-            customMessages : function() {
+            messages : function() {
                 return {
                     'required' : 'The :attribute field is required.'
                 };
             }
         });
 
-        expect(typeof ardent.customMessages).toEqual('function');
-        expect(ardent.getCustomMessages())
+        expect(typeof ardent.messages).toEqual('function');
+        expect(ardent.getMessages())
             .toEqual({'required' : 'The :attribute field is required.'});
     });
     

@@ -1,20 +1,58 @@
 /* Implementation
  - Mixin like Backbone.Validation
- X Validate with Validator
- - fire error events on successful 
- - only validate on save, not on every set
- X expose errors object on model instance
- X allows creating rules/messages with function
+ Y Validate with Validator
+ Y only validate on save, not on every set
+ Y expose errors object on model instance
+ Y allows creating rules/messages with function
  - Mimick Ardent
-    N forceSave method
+    - forceSave method
     Y allow rules and customMsgs on save options and on validate()
-    N beforeSave and afterSave hooks?
-    - allow custom validators
- X Allow validation of specific attr(s)
+    - beforeSave and afterSave hooks?
+    Y allow custom validators
+ Y Allow validation of specific attr(s)
 
 */
 
 Backbone.Validator = Validator;
+
+// Based on jquery's extend function
+function extend() {
+    var src, copy, name, options, clone,
+        target = arguments[0] || {},
+        i = 1,
+        length = arguments.length;
+
+    for ( ; i < length; i++ ) {
+        // Only deal with non-null/undefined values
+        if ( (options = arguments[ i ]) != null ) {
+            // Extend the base object
+            for ( name in options ) {
+                src = target[ name ];
+                copy = options[ name ];
+
+                // Prevent never-ending loop
+                if ( target === copy ) {
+                    continue;
+                }
+
+                // Recurse if we're merging plain objects or arrays
+                if ( copy && typeof copy === 'object' ) {
+                    clone = src && typeof src === 'object' ? src : {};
+
+                    // Never move original objects, clone them
+                    target[ name ] = extend( clone, copy );
+
+                // Don't bring in undefined values
+                } else if ( copy !== undefined ) {
+                    target[ name ] = copy;
+                }
+            }
+        }
+    }
+
+    // Return the modified object
+    return target;
+}
 
 Backbone.Ardent = Backbone.Model.extend({
     /**
@@ -27,7 +65,7 @@ Backbone.Ardent = Backbone.Model.extend({
      * {Object|Function} The Validator error message templates
      * to display on validation failure.
      */
-    customMessages : {},
+    messages : {},
 
     /**
      * Allows you to inject different rules into the new instance
@@ -36,7 +74,7 @@ Backbone.Ardent = Backbone.Model.extend({
      */
     constructor : function(attributes, options) {
         options || (options = {});
-        _.extend(this, _.pick(options, 'rules', 'customMessages'));
+        _.extend(this, _.pick(options, 'rules', 'messages'));
         Backbone.Model.apply(this, arguments);
     },
 
@@ -50,13 +88,14 @@ Backbone.Ardent = Backbone.Model.extend({
     /**
      * @return {Object} The validatorjs custom messages for this instance
      */
-    getCustomMessages : function() {
-        return _.isFunction(this.customMessages) ? this.customMessages.apply(this) : this.customMessages;
+    getMessages : function() {
+        return _.isFunction(this.messages) ? this.messages.apply(this) : this.messages;
     },
 
     validate : function(attributes, options) {
         var attrs = attributes ? attributes : this.attributes,
-            rules = this.getRules();
+            rules = this.getRules(),
+            messages = this.getMessages();
 
         options || (options = {});
 
@@ -64,10 +103,17 @@ Backbone.Ardent = Backbone.Model.extend({
             (_.isObject(options.rules) || _.isFunction(options.rules))
         ) {
             // Override rules for this invocation
-            rules = _.isObject(options.rules) ? options.rules : options.rules.apply(this);
+            rules = extend({}, rules, _.isObject(options.rules) ? options.rules : options.rules.apply(this));
         }
 
-        var validator = new Validator(attrs, rules);
+        if (!_.isUndefined(options.messages) &&
+            (_.isObject(options.messages) || _.isFunction(options.messages))
+        ) {
+            // Override messages for this invocation
+            messages = extend({}, messages, _.isObject(options.messages) ? options.messages : options.messages.apply(this));
+        }
+
+        var validator = new Validator(attrs, rules, messages);
 
         // Make the errors result available on the model
         this.errors = validator.errors;

@@ -19,17 +19,5 @@ describe('The "required" validator', function() {
         ardent.set({name:'      '});
         expect(ardent.validate()).toBeDefined();
     });
-
-    xit('flags attributes not defined', function() {
-        //TODO
-        ardent = new Backbone.Ardent(null, {rules: {'name' : 'required'}});
-        expect(ardent.validate()).toBe(false);
-    });
-
-    xit('flags null attributes', function() {
-        //TODO
-        ardent.set({'name':null});
-        expect(ardent.validate()).toBe(false);
-    });
     
 });

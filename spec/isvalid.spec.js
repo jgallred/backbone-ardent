@@ -19,8 +19,18 @@ describe('Backbone.Ardent isValid', function() {
 
     it('populates the validationError property of the model', function() {
         expect(ardent.isValid()).toBe(false);
+        expect(ardent.validationError).toBeTruthy();
+        expect(ardent.validationError.get('name').length).toBe(1);
+    });
+
+    it('nulls the validationError property of the model after success', function() {
+        expect(ardent.isValid()).toBe(false);
         expect(ardent.validationError).toBeDefined();
         expect(ardent.validationError.get('name').length).toBe(1);
+
+        ardent.set({'name':'hello'});
+        expect(ardent.isValid()).toBe(true);
+        expect(ardent.validationError).not.toBeTruthy();
     });
 
     it('validates all rules by default', function() {
@@ -121,7 +131,7 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError.get('gump').length).toBe(0);
     });
 
-    it('overrides class rules if a rules hash is passed in the second parameter', function() {
+    it('merges passed rules with class rules', function() {
         ardent.rules = {
             'name' : 'required|min:4',
             'email' : 'email'
@@ -133,24 +143,51 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError.get('name').length).toBe(1);
         expect(ardent.validationError.first('name'))
             .toEqual('The name must be less than 2 characters.');
-        expect(ardent.validationError.get('email').length).toBe(0);
-        expect(ardent.validationError.get('phone').length).toBe(0);
+        expect(ardent.validationError.get('email').length).toBe(1);
     });
 
-    it('overrides class rules if a rules hash is passed in the only parameter', function() {
+    it('returns custom error messages from the class', function() {
         ardent.rules = {
-            'name' : 'required|min:4',
-            'email' : 'email'
+            'name' : 'required|min:4'
         };
 
-        ardent.set({'name':'foo', 'email':'hello'});
+        ardent.messages = {
+            'min' : {'string' : ':attribute is not long enough'}
+        };
 
-        expect(ardent.isValid({rules:{'name':'max:2'}})).toBe(false);
+        ardent.set({'name':'foo'});
+
+        expect(ardent.isValid()).toBe(false);
+        expect(ardent.validationError).toBeTruthy();
         expect(ardent.validationError.get('name').length).toBe(1);
-        expect(ardent.validationError.first('name'))
-            .toEqual('The name must be less than 2 characters.');
-        expect(ardent.validationError.get('email').length).toBe(0);
-        expect(ardent.validationError.get('phone').length).toBe(0);
+        expect(ardent.validationError.first('name')).toEqual('name is not long enough');
+    });
+
+    it('allows custom error messages to be passed in the options', function() {
+        expect(ardent.isValid(null, {messages:{'required':'You\'re missing :attribute'}})).toBe(false);
+        expect(ardent.validationError).toBeTruthy();
+        expect(ardent.validationError.get('name').length).toBe(1);
+        expect(ardent.validationError.first('name')).toEqual('You\'re missing name');
+    });
+
+    it('merges passed custom error messages with those of the class', function() {
+        ardent.rules = {
+            'name' : 'min:4',
+            'age' : 'min:21'
+        };
+
+        ardent.messages = {
+            'min' : {'string' : ':attribute is not long enough'}
+        };
+
+        ardent.set({'name':'foo', 'age':19});
+
+        expect(ardent.isValid(null, {messages:{'min':{'numeric':'Too young'}}})).toBe(false);
+        expect(ardent.validationError).toBeTruthy();
+        expect(ardent.validationError.get('name').length).toBe(1);
+        expect(ardent.validationError.first('name')).toEqual('name is not long enough');
+        expect(ardent.validationError.get('age').length).toBe(1);
+        expect(ardent.validationError.first('age')).toEqual('Too young');
     });
     
 });

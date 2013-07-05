@@ -38,5 +38,15 @@ describe('Backbone.Model', function() {
         expect(ardent.validationError.first('name'))
             .toEqual('The name must be at least 5 characters.');
     });
+
+    it('allows custom error messages to be passed in the options to save()', function() {
+        expect(ardent.save({'name':''}, {
+            validate:true,
+            messages:{required:'No :attribute'}
+        })).toBe(false);
+        expect(ardent.validate).toHaveBeenCalled();
+        expect(ardent.validationError.get('name').length).toBe(1);
+        expect(ardent.validationError.first('name')).toEqual('No name');
+    });
     
 });
