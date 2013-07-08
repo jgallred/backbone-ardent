@@ -6,8 +6,15 @@ A backbone model validation plugin that mimics Max Ehsan's excellent [Ardent](ht
 
 ## Distribution
 
-* Development: [backbone-ardent.js](#)
-* Production:  [backbone-ardent.min.js](#)
+* Development: [backbone-ardent.js](https://raw.github.com/jgallred/backbone-ardent/master/dist/backbone-ardent.js)
+* Production:  [backbone-ardent.min.js](https://raw.github.com/jgallred/backbone-ardent/master/dist/backbone-ardent.min.js)
+
+### Built On
+* [Validatorjs](https://github.com/skaterdav85/validatorjs) v0.9.2
+
+### Tested With
+* [Underscore](http://underscorejs.org/) 1.4.4
+* [Backbone](http://backbonejs.org/) v1.0.0
 
 ##Installation
 
