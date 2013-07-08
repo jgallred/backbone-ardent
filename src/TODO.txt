@@ -1,0 +1,4 @@
+* Mimick Ardent
+    * forceSave method?
+    * beforeSave and afterSave hooks?
+* Provide a mixin like Backbone.Validation

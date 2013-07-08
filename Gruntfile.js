@@ -10,25 +10,6 @@ module.exports = function(grunt) {
       '* Copyright (c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>;' +
       ' Licensed <%= pkg.license %> */\n',
     // Task configuration.
-    /*concat: {
-      options: {
-        banner: '<%= banner %>',
-        stripBanners: true
-      },
-      dist: {
-        src: ['lib/<%= pkg.name %>.js'],
-        dest: 'dist/<%= pkg.name %>.js'
-      }
-    },*/
-    uglify: {
-      options: {
-        banner: '<%= banner %>'
-      },
-      dist: {
-        src: 'src/<%= pkg.name %>.js',
-        dest: 'dist/<%= pkg.name %>.min.js'
-      }
-    },
     jshint: {
       all: [
         'Gruntfile.js',
@@ -39,37 +20,71 @@ module.exports = function(grunt) {
         jshintrc: '.jshintrc'
       }
     },
-    /*watch: {
-      gruntfile: {
-        files: '<%= jshint.gruntfile.src %>',
-        tasks: ['jshint:gruntfile']
-      },
-      lib_test: {
-        files: '<%= jshint.lib_test.src %>',
-        tasks: ['jshint:lib_test', 'nodeunit']
-      }
-    },*/
     jasmine: {
-      //src: 'src/**/*.js',
-      src: 'src/*.js',
+      src: {
+        src: 'src/*.js',
+        options: {
+          specs: 'spec/**/*.spec.js',
+          //helpers: 'spec/*Helper.js'
+          vendor: [
+            'libs/jquery-1.10.1.js',
+            'libs/json2.js',
+            'libs/underscore.js',
+            'libs/backbone-1.0.0.js',
+            'node_modules/validatorjs/src/validator.js'
+          ],
+          keepRunner : true
+        }
+      },
+      dist: {
+        src: 'dist/<%= pkg.name %>.js',
+        options: {
+          specs: 'spec/**/*.spec.js',
+          //helpers: 'spec/*Helper.js'
+          vendor: [
+            'libs/jquery-1.10.1.js',
+            'libs/json2.js',
+            'libs/underscore.js',
+            'libs/backbone-1.0.0.js'
+          ]
+        }
+      },
+      distmin: {
+        src: 'dist/<%= pkg.name %>.min.js',
+        options: {
+          specs: 'spec/**/*.spec.js',
+          //helpers: 'spec/*Helper.js'
+          vendor: [
+            'libs/jquery-1.10.1.js',
+            'libs/json2.js',
+            'libs/underscore.js',
+            'libs/backbone-1.0.0.js'
+          ]
+        }
+      }
+    },
+    rig: {
       options: {
-        specs: 'spec/**/*.spec.js',
-        //helpers: 'spec/*Helper.js'
-        vendor: [
-          'libs/jquery-1.10.1.js',
-          'libs/json2.js',
-          'libs/underscore.js',
-          'libs/backbone-1.0.0.js',
-          'node_modules/validatorjs/src/validator.js'
-        ],
-        keepRunner : true
+        banner: '<%= banner %>'
+      },
+      browser: {
+        src: 'src/<%= pkg.name %>.js',
+        dest: 'dist/<%= pkg.name %>.js'
+      }
+    },
+    uglify: {
+      options: {
+        banner: '<%= banner %>'
+      },
+      dist: {
+        src: 'dist/<%= pkg.name %>.js',
+        dest: 'dist/<%= pkg.name %>.min.js'
       }
     }
 
   });
 
   // These plugins provide necessary tasks.
-  grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -79,6 +94,7 @@ module.exports = function(grunt) {
   // Default task.
   grunt.registerTask('default', ['jshint', /*'concat', 'uglify'*/]);
 
-  grunt.registerTask('test', ['jshint', 'jasmine']);
+  grunt.registerTask('test', ['jshint', 'jasmine:src']);
 
+  grunt.registerTask('deploy', ['rig', 'uglify', 'jasmine:dist', 'jasmine:distmin']);
 };

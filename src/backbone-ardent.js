@@ -1,155 +1,152 @@
-/* Implementation
- - Mixin like Backbone.Validation
- Y Validate with Validator
- Y only validate on save, not on every set
- Y expose errors object on model instance
- Y allows creating rules/messages with function
- - Mimick Ardent
-    - forceSave method
-    Y allow rules and customMsgs on save options and on validate()
-    - beforeSave and afterSave hooks?
-    Y allow custom validators
- Y Allow validation of specific attr(s)
+Backbone.Ardent = (function(_, Backbone){
+    'use strict';
 
-*/
+    var hook = {};
 
-Backbone.Validator = Validator;
+    (function(window){
+        /* jshint unused: false */
+        //= ../node_modules/validatorjs/src/validator.js
+    }(hook));
 
-// Based on jquery's extend function
-function extend() {
-    var src, copy, name, options, clone,
-        target = arguments[0] || {},
-        i = 1,
-        length = arguments.length;
+    var BBValidator = Backbone.Validator = window.Validator || hook.Validator;
 
-    for ( ; i < length; i++ ) {
-        // Only deal with non-null/undefined values
-        if ( (options = arguments[ i ]) != null ) {
-            // Extend the base object
-            for ( name in options ) {
-                src = target[ name ];
-                copy = options[ name ];
+    // Based on jquery's extend function
+    function extend() {
+        var src, copy, name, options, clone,
+            target = arguments[0] || {},
+            i = 1,
+            length = arguments.length;
 
-                // Prevent never-ending loop
-                if ( target === copy ) {
-                    continue;
-                }
+        for ( ; i < length; i++ ) {
+            // Only deal with non-null/undefined values
+            if ( (options = arguments[ i ]) != null ) {
+                // Extend the base object
+                for ( name in options ) {
+                    src = target[ name ];
+                    copy = options[ name ];
 
-                // Recurse if we're merging plain objects or arrays
-                if ( copy && typeof copy === 'object' ) {
-                    clone = src && typeof src === 'object' ? src : {};
+                    // Prevent never-ending loop
+                    if ( target === copy ) {
+                        continue;
+                    }
 
-                    // Never move original objects, clone them
-                    target[ name ] = extend( clone, copy );
+                    // Recurse if we're merging plain objects or arrays
+                    if ( copy && typeof copy === 'object' ) {
+                        clone = src && typeof src === 'object' ? src : {};
 
-                // Don't bring in undefined values
-                } else if ( copy !== undefined ) {
-                    target[ name ] = copy;
+                        // Never move original objects, clone them
+                        target[ name ] = extend( clone, copy );
+
+                    // Don't bring in undefined values
+                    } else if ( copy !== undefined ) {
+                        target[ name ] = copy;
+                    }
                 }
             }
         }
+
+        // Return the modified object
+        return target;
     }
 
-    // Return the modified object
-    return target;
-}
+    return Backbone.Model.extend({
+        /**
+         * {Object|Function} The Validator rules to enforce on the 
+         * model.
+         */
+        rules : {},
 
-Backbone.Ardent = Backbone.Model.extend({
-    /**
-     * {Object|Function} The Validator rules to enforce on the 
-     * model.
-     */
-    rules : {},
+        /**
+         * {Object|Function} The Validator error message templates
+         * to display on validation failure.
+         */
+        messages : {},
 
-    /**
-     * {Object|Function} The Validator error message templates
-     * to display on validation failure.
-     */
-    messages : {},
+        /**
+         * Allows you to inject different rules into the new instance
+         * @param {Object} attributes
+         * @param {Object} options 
+         */
+        constructor : function(attributes, options) {
+            options || (options = {});
+            _.extend(this, _.pick(options, 'rules', 'messages'));
+            Backbone.Model.apply(this, arguments);
+        },
 
-    /**
-     * Allows you to inject different rules into the new instance
-     * @param {Object} attributes
-     * @param {Object} options 
-     */
-    constructor : function(attributes, options) {
-        options || (options = {});
-        _.extend(this, _.pick(options, 'rules', 'messages'));
-        Backbone.Model.apply(this, arguments);
-    },
+        /**
+         * @return {Object} The validatorjs rules for this instance
+         */
+        getRules : function() {
+            return _.isFunction(this.rules) ? this.rules.apply(this) : this.rules;
+        },
 
-    /**
-     * @return {Object} The validatorjs rules for this instance
-     */
-    getRules : function() {
-        return _.isFunction(this.rules) ? this.rules.apply(this) : this.rules;
-    },
+        /**
+         * @return {Object} The validatorjs custom messages for this instance
+         */
+        getMessages : function() {
+            return _.isFunction(this.messages) ? this.messages.apply(this) : this.messages;
+        },
 
-    /**
-     * @return {Object} The validatorjs custom messages for this instance
-     */
-    getMessages : function() {
-        return _.isFunction(this.messages) ? this.messages.apply(this) : this.messages;
-    },
+        validate : function(attributes, options) {
+            var attrs = attributes ? attributes : this.attributes,
+                rules = this.getRules(),
+                messages = this.getMessages();
 
-    validate : function(attributes, options) {
-        var attrs = attributes ? attributes : this.attributes,
-            rules = this.getRules(),
-            messages = this.getMessages();
+            options || (options = {});
 
-        options || (options = {});
-
-        if (!_.isUndefined(options.rules) &&
-            (_.isObject(options.rules) || _.isFunction(options.rules))
-        ) {
-            // Override rules for this invocation
-            rules = extend({}, rules, _.isObject(options.rules) ? options.rules : options.rules.apply(this));
-        }
-
-        if (!_.isUndefined(options.messages) &&
-            (_.isObject(options.messages) || _.isFunction(options.messages))
-        ) {
-            // Override messages for this invocation
-            messages = extend({}, messages, _.isObject(options.messages) ? options.messages : options.messages.apply(this));
-        }
-
-        var validator = new Validator(attrs, rules, messages);
-
-        // Make the errors result available on the model
-        this.errors = validator.errors;
-        if (validator.fails()) {
-            return this.errors;
-        }
-    },
-
-    _validateAttrs: function(attrs, options) {
-        if (!options.validate || !this.validate) {
-            return true;
-        }
-        var error = this.validationError = this.validate(attrs, options) || null;
-        if (!error) {
-            return true;
-        }
-        this.trigger('invalid', this, error, _.extend(options || {}, {validationError: error}));
-        return false;
-    },
-
-    isValid : function(attribute, options) {
-        var attrs = _.extend({}, this.attributes), opts = null;
-        if (arguments.length === 1) {
-            if (_.isString(attribute) || _.isArray(attribute)) {
-                attrs = _.pick(attrs, attribute);
-            } else if (_.isObject(attribute)) {
-                opts = attribute;
+            if (!_.isUndefined(options.rules) &&
+                (_.isObject(options.rules) || _.isFunction(options.rules))
+            ) {
+                // Override rules for this invocation
+                rules = extend({}, rules, _.isObject(options.rules) ? options.rules : options.rules.apply(this));
             }
-        } else if (arguments.length > 1) {
-            if (_.isString(attribute) || _.isArray(attribute)) {
-                attrs = _.pick(attrs, attribute);
+
+            if (!_.isUndefined(options.messages) &&
+                (_.isObject(options.messages) || _.isFunction(options.messages))
+            ) {
+                // Override messages for this invocation
+                messages = extend({}, messages, _.isObject(options.messages) ? options.messages : options.messages.apply(this));
             }
-            if (_.isObject(options)) {
-                opts = options;
+
+            var validator = new BBValidator(attrs, rules, messages);
+
+            // Make the errors result available on the model
+            this.errors = validator.errors;
+            if (validator.fails()) {
+                return this.errors;
             }
+        },
+
+        _validateAttrs: function(attrs, options) {
+            if (!options.validate || !this.validate) {
+                return true;
+            }
+            var error = this.validationError = this.validate(attrs, options) || null;
+            if (!error) {
+                return true;
+            }
+            this.trigger('invalid', this, error, _.extend(options || {}, {validationError: error}));
+            return false;
+        },
+
+        isValid : function(attribute, options) {
+            var attrs = _.extend({}, this.attributes), opts = null;
+            if (arguments.length === 1) {
+                if (_.isString(attribute) || _.isArray(attribute)) {
+                    attrs = _.pick(attrs, attribute);
+                } else if (_.isObject(attribute)) {
+                    opts = attribute;
+                }
+            } else if (arguments.length > 1) {
+                if (_.isString(attribute) || _.isArray(attribute)) {
+                    attrs = _.pick(attrs, attribute);
+                }
+                if (_.isObject(options)) {
+                    opts = options;
+                }
+            }
+            return this._validateAttrs(attrs, _.extend(opts || {}, { validate: true }));
         }
-        return this._validateAttrs(attrs, _.extend(opts || {}, { validate: true }));
-    }
-});
+    });
+
+}(_, Backbone));
