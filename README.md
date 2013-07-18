@@ -1,5 +1,7 @@
 #Backbone Ardent
 
+[![Build Status](https://travis-ci.org/jgallred/backbone-ardent.png?branch=master)](https://travis-ci.org/jgallred/backbone-ardent)
+
 __Warning__: This plugin is still unstable and subject to changes as I continue to work out what more I want out of it.
 
 A backbone model validation plugin that mimics Max Ehsan's excellent [Ardent](https://github.com/laravelbook/ardent) package for the php framework [Laravel](http://laravel.com/). It also borrows some design from Thomas Pedersen's [backbone.validation](https://github.com/thedersen/backbone.validation) plugin. It allows you to use several of Laravel's elegant [validation rules](http://laravel.com/docs/validation) on your Backbone models thanks to David's [validatorjs](https://github.com/skaterdav85/validatorjs) package.
