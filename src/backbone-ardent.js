@@ -49,7 +49,7 @@ Backbone.Ardent = (function(_, Backbone){
         return target;
     }
 
-    return Backbone.Model.extend({
+    var mixin = {
         /**
          * {Object|Function} The Validator rules to enforce on the 
          * model.
@@ -61,17 +61,6 @@ Backbone.Ardent = (function(_, Backbone){
          * to display on validation failure.
          */
         messages : {},
-
-        /**
-         * Allows you to inject different rules into the new instance
-         * @param {Object} attributes
-         * @param {Object} options 
-         */
-        constructor : function(attributes, options) {
-            options || (options = {});
-            _.extend(this, _.pick(options, 'rules', 'messages'));
-            Backbone.Model.apply(this, arguments);
-        },
 
         /**
          * @return {Object} The validatorjs rules for this instance
@@ -147,6 +136,47 @@ Backbone.Ardent = (function(_, Backbone){
             }
             return this._validateAttrs(attrs, _.extend(opts || {}, { validate: true }));
         }
+    };
+
+    var Ardent = Backbone.Model.extend({
+
+        /**
+         * Allows you to inject different rules into the new instance
+         * @param {Object} attributes
+         * @param {Object} options 
+         */
+        constructor : function(attributes, options) {
+            options || (options = {});
+            _.extend(this, _.pick(options, 'rules', 'messages'));
+            return Backbone.Model.apply(this, arguments);
+        }
+    }, {
+        mixin : mixin,
+
+        applyTo : function(ClassRef) {
+            if (ClassRef.prototype) {
+                // Constructor
+                _.extend(ClassRef.prototype, mixin);
+
+                if (ClassRef.prototype.constructor) {
+                    // Merge constructor
+                    var originalConstructor = ClassRef.prototype.constructor;
+                    ClassRef.prototype.constructor = function(attributes, options) {
+                        options || (options = {});
+                        _.extend(this, _.pick(options, 'rules', 'messages'));
+                        return originalConstructor.apply(this, arguments);
+                    };
+                }
+            } else {
+                // Assume instance
+                _.extend(ClassRef, mixin);
+            }
+            return ClassRef;
+        }
     });
+
+    _.extend(Ardent.prototype, mixin);
+
+    return Ardent;
 
 }(_, Backbone));
