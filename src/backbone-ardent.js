@@ -145,37 +145,66 @@ Backbone.Ardent = (function(_, Backbone){
          * @param {Object} attributes
          * @param {Object} options 
          */
-        constructor : function(attributes, options) {
+        /*constructor : function(attributes, options) {
             options || (options = {});
             _.extend(this, _.pick(options, 'rules', 'messages'));
             return Backbone.Model.apply(this, arguments);
-        }
+        }*/
+        /*initialize : function(attributes, options) {
+            /* jshint camelcase: false /
+            options || (options = {});
+            _.extend(this, _.pick(options, 'rules', 'messages'));
+            //Backbone.Model.prototype.initialize.apply(this, arguments);
+            Ardent.__super__.initialize.apply(this, arguments);
+        }*/
     }, {
         mixin : mixin,
 
-        applyTo : function(ClassRef) {
+        mixInto : function(ClassRef) {
             if (ClassRef.prototype) {
-                // Constructor
-                _.extend(ClassRef.prototype, mixin);
-
-                if (ClassRef.prototype.constructor) {
-                    // Merge constructor
-                    var originalConstructor = ClassRef.prototype.constructor;
-                    ClassRef.prototype.constructor = function(attributes, options) {
-                        options || (options = {});
-                        _.extend(this, _.pick(options, 'rules', 'messages'));
-                        return originalConstructor.apply(this, arguments);
-                    };
+                // If there is already an initialize method
+                if (!_.isUndefined(ClassRef.prototype.initialize) &&
+                    _.isFunction(ClassRef.prototype.initialize)
+                ) {
+                    var oldInit = ClassRef.prototype.initialize;
+                    _.extend(
+                        ClassRef.prototype,
+                        mixin,
+                        {
+                            /**
+                             * Allows you to inject different rules into the new instance
+                             * @param {Object} attributes
+                             * @param {Object} options 
+                             */
+                            initialize : function(attributes, options){
+                                options || (options = {});
+                                _.extend(this, _.pick(options, 'rules', 'messages'));
+                                oldInit.apply(this, arguments);
+                            }
+                        }
+                    );
+                }  else {
+                    _.extend(ClassRef.prototype, mixin,{
+                        /**
+                         * Allows you to inject different rules into the new instance
+                         * @param {Object} attributes
+                         * @param {Object} options 
+                         */
+                        initialize : function(attributes, options){
+                            options || (options = {});
+                            _.extend(this, _.pick(options, 'rules', 'messages'));
+                        }
+                    });
                 }
-            } else {
-                // Assume instance
-                _.extend(ClassRef, mixin);
             }
+
             return ClassRef;
         }
     });
 
-    _.extend(Ardent.prototype, mixin);
+    //_.extend(Ardent.prototype, mixin);
+
+    Ardent.mixInto(Ardent);
 
     return Ardent;
 
