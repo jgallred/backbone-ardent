@@ -123,7 +123,7 @@ can be mixed into your models and classes, without extending Backbone.Ardent.
         comment_two = new Backbone.BarModel();
 
     Backbone.Ardent.mixInto(comment_one);
-    comment_one.rules({comment:'requried|max:500'});
+    comment_one.rules({comment:'required|max:500'});
     comment_one.validate(); //  Calls the Backbone.Ardent implementation
     comment_two.validate(); //  Calls the Backbone.BarModel implementation
 ```
