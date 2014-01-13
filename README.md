@@ -91,6 +91,43 @@ will be merged with those of the class.
     }
 ```
 
+###Mixin
+If you're already using a plugin that gives you a base model, Backbone.Ardent's functionality
+can be mixed into your models and classes, without extending Backbone.Ardent.
+
+```js
+    // Mixin at the class level
+    Backbone.Ardent.mixInto(Backbone.FooModel);
+
+    var Post = Backbone.FooModel.extend({
+        rules : {
+            title : 'required|max:10',
+            body : 'required|max:500',
+            email : 'required|email'
+        },
+        default : {
+            title : 'this title is too long',
+            body : '', // The 'required' validator only checks defined attributes
+            email : 'hello'
+        }
+    });
+
+    var first_post = new Post();
+    var errors = first_post.validate();
+    if (errors) {
+        // ...
+    }
+
+    // Or at the instance level
+    var comment_one = new Backbone.BarModel(),
+        comment_two = new Backbone.BarModel();
+
+    Backbone.Ardent.mixInto(comment_one);
+    comment_one.rules({comment:'requried|max:500});
+    comment_one.validate(); //  Call the Backbone.Ardent implementation
+    comment_two.validate(); //  Call the Backbone.BarModel implementation
+```
+
 ### Custom Error Messages
 
 Validatorjs allow you to pass override messages that can be returned instead of

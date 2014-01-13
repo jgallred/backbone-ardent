@@ -147,26 +147,7 @@ Backbone.Ardent = (function (_, Backbone) {
         }
     };
 
-    var Ardent = Backbone.Model.extend({
-
-        /**
-         * Allows you to inject different rules into the new instance
-         * @param {Object} attributes
-         * @param {Object} options
-         */
-        /*constructor : function(attributes, options) {
-            options || (options = {});
-            _.extend(this, _.pick(options, 'rules', 'messages'));
-            return Backbone.Model.apply(this, arguments);
-        }*/
-        /*initialize : function(attributes, options) {
-            /* jshint camelcase: false /
-            options || (options = {});
-            _.extend(this, _.pick(options, 'rules', 'messages'));
-            //Backbone.Model.prototype.initialize.apply(this, arguments);
-            Ardent.__super__.initialize.apply(this, arguments);
-        }*/
-    }, {
+    var Ardent = Backbone.Model.extend({}, {
         mixInto : function (ClassRef) {
             if (ClassRef.prototype) {
                 // If there is already an initialize method
