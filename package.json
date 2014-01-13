@@ -1,6 +1,6 @@
 {
   "name": "backbone-ardent",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "A backbone model validation plugin that mimicks the Ardent package for the php framework Laravel. Allows you to use Laravel type validation rules on your Backbone models.",
   "scripts": {
     "test": "grunt test"
@@ -14,7 +14,7 @@
     "grunt-contrib-jshint": "~0.6.0",
     "grunt-contrib-uglify": "~0.2.2",
     "grunt-rigger": "~0.5.0",
-    "validatorjs": "git+https://github.com/jgallred/validatorjs.git"
+    "validatorjs": "~1.0.1"
   },
   "license": "MIT"
 }

@@ -27,7 +27,7 @@ describe('Backbone.Model', function() {
 
     it('allows override rules to be passed in the options to set()', function() {
         ardent.set({'name':'Ford Prefect'});
-        expect(ardent.set({'name':''}, {
+        expect(ardent.set({'name':'r'}, {
             validate:true,
             rules:{name:'min:5'}
         })).toBe(false);
@@ -47,5 +47,5 @@ describe('Backbone.Model', function() {
         expect(ardent.validationError.get('name').length).toBe(1);
         expect(ardent.validationError.first('name')).toEqual('Missing name');
     });
-    
+
 });

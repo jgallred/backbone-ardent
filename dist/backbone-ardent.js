@@ -1,13 +1,25 @@
-/*! backbone-ardent - v0.5.0 - 2013-07-08
-* Copyright (c) 2013 Jason Allred; Licensed MIT */
-Backbone.Ardent = (function(_, Backbone){
+/*! backbone-ardent - v1.0.0 - 2014-01-12
+* Copyright (c) 2014 Jason Allred; Licensed MIT */
+Backbone.Ardent = (function (_, Backbone) {
     'use strict';
 
     var hook = {};
 
-    (function(window){
+    (function (window) {
         /* jshint unused: false */
         (function() {
+        	// Shim taken from MDN site
+        	if (!Array.prototype.forEach) {
+            Array.prototype.forEach = function (fn, scope) {
+                'use strict';
+                var i, len;
+                for (i = 0, len = this.length; i < len; ++i) {
+                    if (i in this) {
+                        fn.call(scope, this[i], i, this);
+                    }
+                }
+            };
+        	}
         
         	var messages = {
         		accepted: 'The :attribute must be accepted.',
@@ -41,10 +53,10 @@ Backbone.Ardent = (function(_, Backbone){
         
         	// Based on jquery's extend function
         	function extend() {
-        		var src, copy, name, options, clone,
-        			target = arguments[0] || {},
-        			i = 1,
-        			length = arguments.length;
+        		var src, copy, name, options, clone;
+        		var target = arguments[0] || {};
+        		var i = 1;
+        		var length = arguments.length;
         
         		for ( ; i < length; i++ ) {
         			// Only deal with non-null/undefined values
@@ -136,45 +148,58 @@ Backbone.Ardent = (function(_, Backbone){
         		},
         
         		check: function() {
-        			var key, val, curRules, curRulesLen, i, rule, ruleVal, passes, msg, msgTmpl, dataForMessageTemplate;
+        			var self = this;
         
-        			for (key in this.input) {
-        				if (this.input.hasOwnProperty(key)) { // make sure property is not inherited
-        					val = this.input[key];
+        			this._each(this.rules, function(attributeToValidate) {
+        				var rulesArray = this.rules[attributeToValidate].split('|');
+        				var inputValue = this.input[attributeToValidate]; // if it doesnt exist in input, it will be undefined
         
-        					if (this.rules.hasOwnProperty(key)) { //check if a rule exists in rules object
-        						curRules = this.rules[key].split('|');
-        						curRulesLen = curRules.length;
+        				rulesArray.forEach(function(ruleString) {
+        					var ruleExtraction = self._extractRuleAndRuleValue(ruleString);
+        					var rule = ruleExtraction.rule;
+        					var ruleValue = ruleExtraction.ruleValue;
+        					var passes, dataForMessageTemplate, msgTmpl, msg;
         
-        						for (i = 0; i < curRulesLen; i++) { //iterate over rules
-        							rule = curRules[i];
+        					passes = self.validate[rule].call(self, inputValue, ruleValue, attributeToValidate);
         
-        							if (rule.indexOf(':') >= 0) {
-        								rule = rule.split(':');
-        
-        								ruleVal = rule[1];
-        								rule = rule[0];
-        							} else {
-        								ruleVal = null;
-        							}
-        
-        							passes = this.validate[rule].call(this, val, ruleVal, key);
-        
-        							if (!passes) {
-        								if ( !this.errors.hasOwnProperty(key) ) {
-        									this.errors[key] = [];
-        								}
-        
-        								dataForMessageTemplate = this._createErrorMessageTemplateData(key, rule, ruleVal);
-        								msgTmpl = this._selectMessageTemplate(rule, val, key);
-        								msg = this._createMessage(msgTmpl, dataForMessageTemplate);
-        
-        								this._addErrorMessage(key, msg);
-        							}
+        					if (!passes) {
+        						if ( !self.errors.hasOwnProperty(attributeToValidate) ) {
+        							self.errors[attributeToValidate] = [];
         						}
+        
+        						dataForMessageTemplate = self._createErrorMessageTemplateData(attributeToValidate, rule, ruleValue);
+        						msgTmpl = self._selectMessageTemplate(rule, inputValue, attributeToValidate);
+        						msg = self._createMessage(msgTmpl, dataForMessageTemplate);
+        						self._addErrorMessage(attributeToValidate, msg);
         					}
-        				}
+        				});
+        			}, this); // end of _each()
+        		},
+        
+        		_each: function(obj, cb, context) {
+        			for (var key in obj) {
+        				cb.call(context, key);
         			}
+        		},
+        
+        		/**
+        		 * Extract a rule and a rule value from a ruleString (i.e. min:3), rule = min, ruleValue = 3
+        		 * @param  {string} ruleString min:3
+        		 * @return {object} object containing the rule and ruleValue
+        		 */
+        		_extractRuleAndRuleValue: function(ruleString) {
+        			var obj = {};
+        			var ruleArray;
+        
+        			obj.rule = ruleString;
+        
+        			if (ruleString.indexOf(':') >= 0) {
+        				ruleArray = ruleString.split(':');
+        				obj.rule = ruleArray[0];
+        				obj.ruleValue = ruleArray[1];
+        			}
+        
+        			return obj;
         		},
         
         		_addErrorMessage: function(key, msg) {
@@ -194,8 +219,8 @@ Backbone.Ardent = (function(_, Backbone){
         			var msgTmpl, messages = this.messages;
         
         			// if the custom error message template exists in messages variable
-        			if (messages.hasOwnProperty(rule+'.'+key)) {
-        				msgTmpl = messages[rule+'.'+key];
+        			if (messages.hasOwnProperty(rule + '.' + key)) {
+        				msgTmpl = messages[rule + '.' + key];
         			} else if (messages.hasOwnProperty(rule)) {
         				msgTmpl = messages[rule];
         
@@ -224,10 +249,6 @@ Backbone.Ardent = (function(_, Backbone){
         			return this.errorCount > 0 ? true : false;
         		},
         
-        		first: function(key) {
-        			return this.errors.hasOwnProperty(key) ? this.errors[key][0] : null;
-        		},
-        
         		// validate functions should return T/F
         		validate: {
         			required: function(val) {
@@ -244,18 +265,25 @@ Backbone.Ardent = (function(_, Backbone){
         			// compares the size of strings
         			// with numbers, compares the value
         			size: function(val, req) {
-        				req = parseFloat(req);
+        				if (val) {
+        					req = parseFloat(req);
         
-        				if (typeof val === 'number') {
-        					return val === req ? true : false;
+        					if (typeof val === 'number') {
+        						return val === req ? true : false;
+        					}
+        					
+        					return val.length === req ? true : false;
         				}
         				
-        				return val.length === req ? true : false;
+        				return true;
         			},
         
-        			// compares the size of strings
-        			// with numbers, compares the value
+        			/**
+        			 * Compares the size of strings or the value of numbers if there is a truthy value
+        			 */
         			min: function(val, req) {
+        				if (val === undefined || val === '') { return true; }
+        
         				if (typeof val === 'number') {
         					return val >= req ? true : false;
         				} else {
@@ -263,9 +291,12 @@ Backbone.Ardent = (function(_, Backbone){
         				}
         			},
         
-        			// compares the size of strings
-        			// with numbers, compares the value
+        			/**
+        			 * Compares the size of strings or the value of numbers if there is a truthy value
+        			 */
         			max: function(val, req) {
+        				if (val === undefined || val === '') { return true; }
+        
         				if (typeof val === 'number') {
         					return val <= req ? true : false;
         				} else {
@@ -274,12 +305,17 @@ Backbone.Ardent = (function(_, Backbone){
         			},
         
         			email: function(val) {
+        				if (val === undefined || val === '') { return true; }
         				return (/\w+@\w{2,}\.\w{2,}/).test(val);
         			},
         
         			numeric: function(val) {
-        				var num = Number(val); // tries to convert value to a number. useful if value is coming from form element
-        			
+        				var num;
+        
+        				if (val === undefined || val === '') { return true; }
+        
+        				num = Number(val); // tries to convert value to a number. useful if value is coming from form element
+        					
         				if (typeof num === 'number' && !isNaN(num) && typeof val !== 'boolean') {
         					return true;
         				} else {
@@ -287,20 +323,27 @@ Backbone.Ardent = (function(_, Backbone){
         				}
         			},
         
-        			url: function(val) {
-        				return (/^https?:\/\/\S+/).test(val);
+        			url: function(url) {
+        				if (url === undefined || url === '') { return true; }
+        
+        				return (/^https?:\/\/\S+/).test(url); 
         			},
         
         			alpha: function(val) {
+        				if (val === undefined || val === '') { return true; }
+        			
         				return (/^[a-zA-Z]+$/).test(val);
         			},
         
         			alpha_dash: function(val) {
+        				if (val === undefined || val === '') { return true; }
         				return (/^[a-zA-Z0-9_\-]+$/).test(val);
         			},
         
         			alpha_num: function(val) {
-        				return (/^[a-zA-Z0-9]+$/).test(val);
+        				if (val === undefined || val === '') { return true; }
+        
+        				return (/^[a-zA-Z0-9]+$/).test(val);				
         			},
         
         			same: function(val, req) {
@@ -326,20 +369,26 @@ Backbone.Ardent = (function(_, Backbone){
         			},
         
         			"in": function(val, req) {
-        				var list = req.split(',');
-        				var len = list.length;
-        				var returnVal = false;
+        				var list, len, returnVal;
         
-        				val = String(val); // convert val to a string if it is a number
+        				if (val) {
+        					list = req.split(',');
+        					len = list.length;
+        					returnVal = false;
         
-        				for (var i = 0; i < len; i++) {
-        					if (val === list[i]) {
-        						returnVal = true;
-        						break;
+        					val = String(val); // convert val to a string if it is a number
+        
+        					for (var i = 0; i < len; i++) {
+        						if (val === list[i]) {
+        							returnVal = true;
+        							break;
+        						}
         					}
-        				}
         
-        				return returnVal;
+        					return returnVal;
+        				}
+        				
+        				return true;
         			},
         
         			not_in: function(val, req) {
@@ -368,8 +417,9 @@ Backbone.Ardent = (function(_, Backbone){
         			},
         
         			confirmed: function(val, req, key) {
-        				console.log('confirmed', val, req, key);
+        				// console.log('confirmed', val, req, key);
         				var confirmedKey = key + '_confirmation';
+        
         				if (this.input[confirmedKey] === val) {
         					return true;
         				}
@@ -378,7 +428,15 @@ Backbone.Ardent = (function(_, Backbone){
         			},
         
         			integer: function(val) {
-        				return (/^\d+$/).test(val);
+        				if (val === undefined || val === '') { return true; }
+        
+        				val = String(val);
+        
+        				if ( (/^\d+$/).test(val) ) {
+        					return true;
+        				} else {
+        					return false;
+        				}
         			}
         		}
         	};
@@ -386,10 +444,7 @@ Backbone.Ardent = (function(_, Backbone){
         	// static methods
         	Validator.register = function(rule, fn, errMsg) {
         		this.prototype.validate[rule] = fn;
-        
-        		if (typeof errMsg === 'string') {
-        			messages[rule] = errMsg;
-        		}
+        		messages[rule] = (typeof errMsg === 'string') ? errMsg : messages['def'];
         	};
         
         	if (typeof module !== 'undefined' && typeof require !== 'undefined') {
@@ -410,29 +465,32 @@ Backbone.Ardent = (function(_, Backbone){
             i = 1,
             length = arguments.length;
 
-        for ( ; i < length; i++ ) {
+        for (; i < length; i++) {
             // Only deal with non-null/undefined values
-            if ( (options = arguments[ i ]) != null ) {
+            options = arguments[i];
+            if (options !== null) {
                 // Extend the base object
-                for ( name in options ) {
-                    src = target[ name ];
-                    copy = options[ name ];
+                for (name in options) {
+                    if (options.hasOwnProperty(name)) {
+                        src = target[name];
+                        copy = options[name];
 
-                    // Prevent never-ending loop
-                    if ( target === copy ) {
-                        continue;
-                    }
+                        // Prevent never-ending loop
+                        if (target === copy) {
+                            continue;
+                        }
 
-                    // Recurse if we're merging plain objects or arrays
-                    if ( copy && typeof copy === 'object' ) {
-                        clone = src && typeof src === 'object' ? src : {};
+                        // Recurse if we're merging plain objects or arrays
+                        if (copy && typeof copy === 'object') {
+                            clone = src && typeof src === 'object' ? src : {};
 
-                        // Never move original objects, clone them
-                        target[ name ] = extend( clone, copy );
+                            // Never move original objects, clone them
+                            target[name] = extend(clone, copy);
 
-                    // Don't bring in undefined values
-                    } else if ( copy !== undefined ) {
-                        target[ name ] = copy;
+                        // Don't bring in undefined values
+                        } else if (copy !== undefined) {
+                            target[name] = copy;
+                        }
                     }
                 }
             }
@@ -442,9 +500,9 @@ Backbone.Ardent = (function(_, Backbone){
         return target;
     }
 
-    return Backbone.Model.extend({
+    var mixin = {
         /**
-         * {Object|Function} The Validator rules to enforce on the 
+         * {Object|Function} The Validator rules to enforce on the
          * model.
          */
         rules : {},
@@ -456,31 +514,20 @@ Backbone.Ardent = (function(_, Backbone){
         messages : {},
 
         /**
-         * Allows you to inject different rules into the new instance
-         * @param {Object} attributes
-         * @param {Object} options 
-         */
-        constructor : function(attributes, options) {
-            options || (options = {});
-            _.extend(this, _.pick(options, 'rules', 'messages'));
-            Backbone.Model.apply(this, arguments);
-        },
-
-        /**
          * @return {Object} The validatorjs rules for this instance
          */
-        getRules : function() {
+        getRules : function () {
             return _.isFunction(this.rules) ? this.rules.apply(this) : this.rules;
         },
 
         /**
          * @return {Object} The validatorjs custom messages for this instance
          */
-        getMessages : function() {
+        getMessages : function () {
             return _.isFunction(this.messages) ? this.messages.apply(this) : this.messages;
         },
 
-        validate : function(attributes, options) {
+        validate : function (attributes, options) {
             var attrs = attributes ? attributes : this.attributes,
                 rules = this.getRules(),
                 messages = this.getMessages();
@@ -501,6 +548,12 @@ Backbone.Ardent = (function(_, Backbone){
                 messages = extend({}, messages, _.isObject(options.messages) ? options.messages : options.messages.apply(this));
             }
 
+            if (options.partial) {
+                // Only use a subset of the rules. This avoids triggering
+                // require errors for properties that we're not trying to test
+                rules = _.pick.apply(_, [rules].concat(_.keys(attrs)));
+            }
+
             var validator = new BBValidator(attrs, rules, messages);
 
             // Make the errors result available on the model
@@ -510,7 +563,7 @@ Backbone.Ardent = (function(_, Backbone){
             }
         },
 
-        _validateAttrs: function(attrs, options) {
+        _validateAttrs: function (attrs, options) {
             if (!options.validate || !this.validate) {
                 return true;
             }
@@ -522,7 +575,7 @@ Backbone.Ardent = (function(_, Backbone){
             return false;
         },
 
-        isValid : function(attribute, options) {
+        isValid : function (attribute, options) {
             var attrs = _.extend({}, this.attributes), opts = null;
             if (arguments.length === 1) {
                 if (_.isString(attribute) || _.isArray(attribute)) {
@@ -538,8 +591,76 @@ Backbone.Ardent = (function(_, Backbone){
                     opts = options;
                 }
             }
-            return this._validateAttrs(attrs, _.extend(opts || {}, { validate: true }));
+            return this._validateAttrs(attrs, _.extend(opts || {}, { validate: true, partial: true }));
+        }
+    };
+
+    var Ardent = Backbone.Model.extend({
+
+        /**
+         * Allows you to inject different rules into the new instance
+         * @param {Object} attributes
+         * @param {Object} options
+         */
+        /*constructor : function(attributes, options) {
+            options || (options = {});
+            _.extend(this, _.pick(options, 'rules', 'messages'));
+            return Backbone.Model.apply(this, arguments);
+        }*/
+        /*initialize : function(attributes, options) {
+            /* jshint camelcase: false /
+            options || (options = {});
+            _.extend(this, _.pick(options, 'rules', 'messages'));
+            //Backbone.Model.prototype.initialize.apply(this, arguments);
+            Ardent.__super__.initialize.apply(this, arguments);
+        }*/
+    }, {
+        mixInto : function (ClassRef) {
+            if (ClassRef.prototype) {
+                // If there is already an initialize method
+                if (!_.isUndefined(ClassRef.prototype.initialize) &&
+                    _.isFunction(ClassRef.prototype.initialize)
+                ) {
+                    var oldInit = ClassRef.prototype.initialize;
+                    _.extend(
+                        ClassRef.prototype,
+                        mixin,
+                        {
+                            /**
+                             * Allows you to inject different rules into the new instance
+                             * @param {Object} attributes
+                             * @param {Object} options
+                             */
+                            initialize : function (attributes, options) {
+                                options || (options = {});
+                                _.extend(this, _.pick(options, 'rules', 'messages'));
+                                oldInit.apply(this, arguments);
+                            }
+                        }
+                    );
+                }  else {
+                    _.extend(ClassRef.prototype, mixin, {
+                        /**
+                         * Allows you to inject different rules into the new instance
+                         * @param {Object} attributes
+                         * @param {Object} options
+                         */
+                        initialize : function (attributes, options) {
+                            options || (options = {});
+                            _.extend(this, _.pick(options, 'rules', 'messages'));
+                        }
+                    });
+                }
+            }
+
+            return ClassRef;
         }
     });
+
+    //_.extend(Ardent.prototype, mixin);
+
+    Ardent.mixInto(Ardent);
+
+    return Ardent;
 
 }(_, Backbone));

@@ -11,7 +11,7 @@
   "quotmark" : "single",
   "trailing" : true,
   "camelcase": true,
-  
+
   "boss"     : true,
   "eqnull"   : true,
   "expr"     : true,
@@ -20,7 +20,7 @@
   "jquery"   : true,
 
   "globals"  : {
-    "jasmine"         : false,
+    "jasmine"    : false,
     "it"         : false,
     "xit"        : false,
     "describe"   : false,

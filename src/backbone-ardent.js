@@ -1,9 +1,9 @@
-Backbone.Ardent = (function(_, Backbone){
+Backbone.Ardent = (function (_, Backbone) {
     'use strict';
 
     var hook = {};
 
-    (function(window){
+    (function (window) {
         /* jshint unused: false */
         //= ../node_modules/validatorjs/src/validator.js
     }(hook));
@@ -17,29 +17,32 @@ Backbone.Ardent = (function(_, Backbone){
             i = 1,
             length = arguments.length;
 
-        for ( ; i < length; i++ ) {
+        for (; i < length; i++) {
             // Only deal with non-null/undefined values
-            if ( (options = arguments[ i ]) != null ) {
+            options = arguments[i];
+            if (options !== null) {
                 // Extend the base object
-                for ( name in options ) {
-                    src = target[ name ];
-                    copy = options[ name ];
+                for (name in options) {
+                    if (options.hasOwnProperty(name)) {
+                        src = target[name];
+                        copy = options[name];
 
-                    // Prevent never-ending loop
-                    if ( target === copy ) {
-                        continue;
-                    }
+                        // Prevent never-ending loop
+                        if (target === copy) {
+                            continue;
+                        }
 
-                    // Recurse if we're merging plain objects or arrays
-                    if ( copy && typeof copy === 'object' ) {
-                        clone = src && typeof src === 'object' ? src : {};
+                        // Recurse if we're merging plain objects or arrays
+                        if (copy && typeof copy === 'object') {
+                            clone = src && typeof src === 'object' ? src : {};
 
-                        // Never move original objects, clone them
-                        target[ name ] = extend( clone, copy );
+                            // Never move original objects, clone them
+                            target[name] = extend(clone, copy);
 
-                    // Don't bring in undefined values
-                    } else if ( copy !== undefined ) {
-                        target[ name ] = copy;
+                        // Don't bring in undefined values
+                        } else if (copy !== undefined) {
+                            target[name] = copy;
+                        }
                     }
                 }
             }
@@ -51,7 +54,7 @@ Backbone.Ardent = (function(_, Backbone){
 
     var mixin = {
         /**
-         * {Object|Function} The Validator rules to enforce on the 
+         * {Object|Function} The Validator rules to enforce on the
          * model.
          */
         rules : {},
@@ -65,18 +68,18 @@ Backbone.Ardent = (function(_, Backbone){
         /**
          * @return {Object} The validatorjs rules for this instance
          */
-        getRules : function() {
+        getRules : function () {
             return _.isFunction(this.rules) ? this.rules.apply(this) : this.rules;
         },
 
         /**
          * @return {Object} The validatorjs custom messages for this instance
          */
-        getMessages : function() {
+        getMessages : function () {
             return _.isFunction(this.messages) ? this.messages.apply(this) : this.messages;
         },
 
-        validate : function(attributes, options) {
+        validate : function (attributes, options) {
             var attrs = attributes ? attributes : this.attributes,
                 rules = this.getRules(),
                 messages = this.getMessages();
@@ -97,6 +100,12 @@ Backbone.Ardent = (function(_, Backbone){
                 messages = extend({}, messages, _.isObject(options.messages) ? options.messages : options.messages.apply(this));
             }
 
+            if (options.partial) {
+                // Only use a subset of the rules. This avoids triggering
+                // require errors for properties that we're not trying to test
+                rules = _.pick.apply(_, [rules].concat(_.keys(attrs)));
+            }
+
             var validator = new BBValidator(attrs, rules, messages);
 
             // Make the errors result available on the model
@@ -106,7 +115,7 @@ Backbone.Ardent = (function(_, Backbone){
             }
         },
 
-        _validateAttrs: function(attrs, options) {
+        _validateAttrs: function (attrs, options) {
             if (!options.validate || !this.validate) {
                 return true;
             }
@@ -118,7 +127,7 @@ Backbone.Ardent = (function(_, Backbone){
             return false;
         },
 
-        isValid : function(attribute, options) {
+        isValid : function (attribute, options) {
             var attrs = _.extend({}, this.attributes), opts = null;
             if (arguments.length === 1) {
                 if (_.isString(attribute) || _.isArray(attribute)) {
@@ -134,7 +143,7 @@ Backbone.Ardent = (function(_, Backbone){
                     opts = options;
                 }
             }
-            return this._validateAttrs(attrs, _.extend(opts || {}, { validate: true }));
+            return this._validateAttrs(attrs, _.extend(opts || {}, { validate: true, partial: true }));
         }
     };
 
@@ -143,7 +152,7 @@ Backbone.Ardent = (function(_, Backbone){
         /**
          * Allows you to inject different rules into the new instance
          * @param {Object} attributes
-         * @param {Object} options 
+         * @param {Object} options
          */
         /*constructor : function(attributes, options) {
             options || (options = {});
@@ -158,9 +167,7 @@ Backbone.Ardent = (function(_, Backbone){
             Ardent.__super__.initialize.apply(this, arguments);
         }*/
     }, {
-        mixin : mixin,
-
-        mixInto : function(ClassRef) {
+        mixInto : function (ClassRef) {
             if (ClassRef.prototype) {
                 // If there is already an initialize method
                 if (!_.isUndefined(ClassRef.prototype.initialize) &&
@@ -174,9 +181,9 @@ Backbone.Ardent = (function(_, Backbone){
                             /**
                              * Allows you to inject different rules into the new instance
                              * @param {Object} attributes
-                             * @param {Object} options 
+                             * @param {Object} options
                              */
-                            initialize : function(attributes, options){
+                            initialize : function (attributes, options) {
                                 options || (options = {});
                                 _.extend(this, _.pick(options, 'rules', 'messages'));
                                 oldInit.apply(this, arguments);
@@ -184,13 +191,13 @@ Backbone.Ardent = (function(_, Backbone){
                         }
                     );
                 }  else {
-                    _.extend(ClassRef.prototype, mixin,{
+                    _.extend(ClassRef.prototype, mixin, {
                         /**
                          * Allows you to inject different rules into the new instance
                          * @param {Object} attributes
-                         * @param {Object} options 
+                         * @param {Object} options
                          */
-                        initialize : function(attributes, options){
+                        initialize : function (attributes, options) {
                             options || (options = {});
                             _.extend(this, _.pick(options, 'rules', 'messages'));
                         }

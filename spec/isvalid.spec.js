@@ -1,29 +1,29 @@
-describe('Backbone.Ardent isValid', function() {
+describe('Backbone.Ardent isValid', function () {
 
     var ardent;
 
-    beforeEach(function(){
+    beforeEach(function (){
         ardent = new Backbone.Ardent({'name':''}, {rules: {'name' : 'required'}});
     });
 
-    afterEach(function(){
+    afterEach(function (){
         ardent = null;
     });
 
-    it('delegates to validate', function() {
+    it('delegates to validate', function () {
         spyOn(ardent, 'validate').andCallThrough();
         expect(ardent.isValid()).toBe(false);
         expect(ardent.validate).toHaveBeenCalled();
         expect(ardent.validate.calls.length).toBe(1);
     });
 
-    it('populates the validationError property of the model', function() {
+    it('populates the validationError property of the model', function () {
         expect(ardent.isValid()).toBe(false);
         expect(ardent.validationError).toBeTruthy();
         expect(ardent.validationError.get('name').length).toBe(1);
     });
 
-    it('nulls the validationError property of the model after success', function() {
+    it('nulls the validationError property of the model after success', function () {
         expect(ardent.isValid()).toBe(false);
         expect(ardent.validationError).toBeDefined();
         expect(ardent.validationError.get('name').length).toBe(1);
@@ -33,7 +33,7 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError).not.toBeTruthy();
     });
 
-    it('validates all rules by default', function() {
+    it('validates all rules by default', function () {
         ardent.rules = {
             'name' : 'required|min:4',
             'email' : 'email'
@@ -46,7 +46,7 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError.get('email').length).toBe(1);
     });
 
-    it('validates only one attribute if a property name is passed', function() {
+    it('validates only one attribute if a property name is passed', function () {
         ardent.rules = {
             'name' : 'required|min:4',
             'email' : 'email'
@@ -61,7 +61,7 @@ describe('Backbone.Ardent isValid', function() {
             .toEqual('The email format is invalid.');
     });
 
-    it('validates all rules if an invalid value is passed for the property name', function() {
+    it('validates all rules if an invalid value is passed for the property name', function () {
         ardent.rules = {
             'name' : 'required|min:4',
             'email' : 'email'
@@ -85,7 +85,7 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError.get('email').length).toBe(1);
     });
 
-    it('validates only the attributes in a passed array of property names', function() {
+    it('validates only the attributes in a passed array of property names', function () {
         ardent.rules = {
             'name' : 'required|min:4',
             'email' : 'email',
@@ -102,7 +102,7 @@ describe('Backbone.Ardent isValid', function() {
             .toEqual('The phone must be 13 characters.');
     });
 
-    it('validates nothing if an empty array is passed', function() {
+    it('validates nothing if an empty array is passed', function () {
         ardent.rules = {
             'name' : 'required|min:4',
             'email' : 'email',
@@ -114,7 +114,7 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.isValid([])).toBe(true);
     });
 
-    it('validates only defined attributes in a passed array of property names', function() {
+    it('validates only defined attributes in a passed array of property names', function () {
         ardent.rules = {
             'name' : 'required|min:4',
             'email' : 'email',
@@ -131,7 +131,7 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError.get('gump').length).toBe(0);
     });
 
-    it('merges passed rules with class rules', function() {
+    it('merges passed rules with class rules', function () {
         ardent.rules = {
             'name' : 'required|min:4',
             'email' : 'email'
@@ -146,7 +146,7 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError.get('email').length).toBe(1);
     });
 
-    it('returns custom error messages from the class', function() {
+    it('returns custom error messages from the class', function () {
         ardent.rules = {
             'name' : 'required|min:4'
         };
@@ -163,14 +163,14 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError.first('name')).toEqual('name is not long enough');
     });
 
-    it('allows custom error messages to be passed in the options', function() {
+    it('allows custom error messages to be passed in the options', function () {
         expect(ardent.isValid(null, {messages:{'required':'You\'re missing :attribute'}})).toBe(false);
         expect(ardent.validationError).toBeTruthy();
         expect(ardent.validationError.get('name').length).toBe(1);
         expect(ardent.validationError.first('name')).toEqual('You\'re missing name');
     });
 
-    it('merges passed custom error messages with those of the class', function() {
+    it('merges passed custom error messages with those of the class', function () {
         ardent.rules = {
             'name' : 'min:4',
             'age' : 'min:21'
@@ -189,5 +189,5 @@ describe('Backbone.Ardent isValid', function() {
         expect(ardent.validationError.get('age').length).toBe(1);
         expect(ardent.validationError.first('age')).toEqual('Too young');
     });
-    
+
 });
