@@ -107,7 +107,7 @@ can be mixed into your models and classes, without extending Backbone.Ardent.
         },
         default : {
             title : 'this title is too long',
-            body : '', // The 'required' validator only checks defined attributes
+            body : '',
             email : 'hello'
         }
     });
@@ -123,9 +123,9 @@ can be mixed into your models and classes, without extending Backbone.Ardent.
         comment_two = new Backbone.BarModel();
 
     Backbone.Ardent.mixInto(comment_one);
-    comment_one.rules({comment:'requried|max:500});
-    comment_one.validate(); //  Call the Backbone.Ardent implementation
-    comment_two.validate(); //  Call the Backbone.BarModel implementation
+    comment_one.rules({comment:'requried|max:500'});
+    comment_one.validate(); //  Calls the Backbone.Ardent implementation
+    comment_two.validate(); //  Calls the Backbone.BarModel implementation
 ```
 
 ### Custom Error Messages
